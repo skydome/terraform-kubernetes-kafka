@@ -291,7 +291,7 @@ resource "kubernetes_stateful_set" "kafka" {
           }
           env {
             name  = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"
-            value = "3"
+            value = "${var.offset_topic_replication_factor}"
           }
           env {
             name  = "KAFKA_ZOOKEEPER_CONNECT"
