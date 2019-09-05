@@ -346,7 +346,7 @@ resource "kubernetes_stateful_set" "kafka" {
         }
       }
     }
-    service_name          = "${var.kafka_name}-kafka-headless"
+    service_name          = "${var.kafka_name}-headless"
     pod_management_policy = "OrderedReady"
     update_strategy {
       type = "OnDelete"
