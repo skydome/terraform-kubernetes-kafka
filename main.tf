@@ -354,3 +354,195 @@ resource "kubernetes_stateful_set" "kafka" {
   }
 }
 
+resource "kubernetes_deployment" "kafka_rest" {
+  count  = var.kafka_rest_enabled ? 1 : 0
+  metadata {
+    name = "${var.kafka_name}-rest"
+    namespace = "${var.namespace}"
+    labels = {
+      app = "${var.kafka_name}-rest"
+      release = "${var.kafka_name}-rest"
+    }
+  }
+
+  spec {
+    replicas = var.kafka_rest_replicacount
+
+    selector {
+      match_labels = {
+        app = "${var.kafka_name}-rest"
+        release = "${var.kafka_name}-rest"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "${var.kafka_name}-rest"
+          release = "${var.kafka_name}-rest"
+        }
+
+        annotations = {
+          "prometheus.io/port" = "5556"
+          "prometheus.io/scrape" = "true"
+        }
+      }
+
+      spec {
+        volume {
+          name = "jmx-config"
+
+          config_map {
+            name = "${var.kafka_name}-rest-jmx-configmap"
+          }
+        }
+
+        container {
+          name    = "prometheus-jmx-exporter"
+          image   = "solsson/kafka-prometheus-jmx-exporter@sha256:6f82e2b0464f50da8104acd7363fb9b995001ddff77d248379f8788e78946143"
+          command = ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:MaxRAMFraction=1", "-XshowSettings:vm", "-jar", "jmx_prometheus_httpserver.jar", "5556", "/etc/jmx-kafka-rest/jmx-kafka-rest-prometheus.yml"]
+
+          port {
+            container_port = 5556
+          }
+
+          volume_mount {
+            name       = "jmx-config"
+            mount_path = "/etc/jmx-kafka-rest"
+          }
+
+          image_pull_policy = "IfNotPresent"
+        }
+
+        container {
+          name  = "${var.kafka_name}-rest-server"
+          image = "confluentinc/cp-kafka-rest:5.3.0"
+
+          port {
+            name           = "rest-proxy"
+            container_port = 8082
+            protocol       = "TCP"
+          }
+
+          port {
+            name           = "jmx"
+            container_port = 5555
+          }
+
+          env {
+            name = "KAFKA_REST_HOST_NAME"
+
+            value_from {
+              field_ref {
+                field_path = "status.podIP"
+              }
+            }
+          }
+
+          env {
+            name  = "KAFKA_REST_ZOOKEEPER_CONNECT"
+            value = "${var.kafka_name}-zookeeper-headless:2181"
+          }
+
+          env {
+            name  = "KAFKA_REST_SCHEMA_REGISTRY_URL"
+            value = "${var.kafka_name}-schema-registry:8081"
+          }
+
+          env {
+            name  = "KAFKAREST_HEAP_OPTS"
+            value = "-Xms512M -Xmx512M"
+          }
+
+          env {
+            name  = "KAFKA_REST_JMX_PORT"
+            value = "5555"
+          }
+
+          image_pull_policy = "IfNotPresent"
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_ingress" "kafka_rest_ingress" {
+  count  = var.kafka_rest_enabled ? 1 : 0
+  metadata {
+    name = "${var.kafka_name}-rest-ingress"
+    namespace = "${var.namespace}"
+    labels = {
+      app = "${var.kafka_name}-rest"
+      release = "${var.kafka_name}-rest"
+    }
+
+    annotations = {
+      for instance in var.kafka_rest_ingress_annotations:
+      instance.key => instance.value
+    }
+  }
+
+  spec {
+    tls {
+      hosts       = ["${var.kafka_rest_ingress_host}"]
+      secret_name = "${var.namespace}-tls-cert"
+    }
+
+    rule {
+      host = "${var.kafka_rest_ingress_host}"
+
+      http {
+        path {
+          path = "/kafka(/|$)(.*)"
+
+          backend {
+            service_name = "${var.kafka_name}-rest-service"
+            service_port = "8082"
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "kafka_rest_service" {
+  count  = var.kafka_rest_enabled ? 1 : 0
+  metadata {
+    name = "${var.kafka_name}-rest-service"
+    namespace = "${var.namespace}"
+    labels = {
+      app = "${var.kafka_name}-rest"
+      release = "${var.kafka_name}-rest"
+    }
+  }
+
+  spec {
+    port {
+      name = "rest-proxy"
+      port = 8082
+    }
+
+    selector = {
+      app = "${var.kafka_name}-rest"
+      release = "${var.kafka_name}-rest"
+    }
+  }
+}
+
+
+resource "kubernetes_config_map" "kafka_rest_jmx_configmap" {
+  count  = var.kafka_rest_enabled ? 1 : 0
+  metadata {
+    name = "${var.kafka_name}-rest-jmx-configmap"
+    namespace = "${var.namespace}"
+    labels = {
+      app = "${var.kafka_name}-rest"
+      release = "${var.kafka_name}-rest"
+    }
+  }
+
+  data = {
+    "jmx-kafka-rest-prometheus.yml" = "jmxUrl: service:jmx:rmi:///jndi/rmi://localhost:5555/jmxrmi                                                                                                \nlowercaseOutputName: true                                                                                                                                  \nlowercaseOutputLabelNames: true                                                                                                                            \nssl: false                                                                                                                                                 \nrules:                                                                     \n- pattern : 'kafka.rest<type=jetty-metrics>([^:]+):'                                                                                                       \n  name: \"cp_kafka_rest_jetty_metrics_$1\"                                                                                                                   \n- pattern : 'kafka.rest<type=jersey-metrics>([^:]+):'                                                                                                      \n  name: \"cp_kafka_rest_jersey_metrics_$1\"\n"
+  }
+}
+
