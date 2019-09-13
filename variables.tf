@@ -21,3 +21,7 @@ variable "kafka_rest_enabled" {
   type = bool
   default = false
 }
+variable "kafka_rest_endpoint" {
+  type = string
+  default = "kafka"
+}

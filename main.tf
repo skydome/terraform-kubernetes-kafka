@@ -493,7 +493,7 @@ resource "kubernetes_ingress" "kafka_rest_ingress" {
 
       http {
         path {
-          path = "/kafka(/|$)(.*)"
+          path = "/${var.kafka_rest_endpoint}(/|$)(.*)"
 
           backend {
             service_name = "${var.kafka_name}-rest-service"
