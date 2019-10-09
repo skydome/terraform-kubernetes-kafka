@@ -14,6 +14,7 @@ Tested on GKE but it should work for any kubernetes cluster given the right terr
 - **kafka_rest_ingress_host**          : ingress host address for routing
 - **kafka_rest_ingress_annotations**   : extra annotations for kubernetes ingress
 - **kafka_rest_enabled**               : should we deploy kafka rest?
+- **kafka_rest_ingress_enabled**       : should we enable ingress for kafka rest? (you may want to deploy some proxy in front of it)
 
 ## Dependencies
 
