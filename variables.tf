@@ -14,14 +14,20 @@ variable "kafka_rest_ingress_host" {
   default = "mydearhost.io"
 }
 variable "kafka_rest_ingress_annotations" {
-  type = list(object({key = string, value = string}))
+  type    = list(object({ key = string, value = string }))
   default = []
 }
 variable "kafka_rest_enabled" {
-  type = bool
+  type    = bool
   default = false
 }
+
 variable "kafka_rest_endpoint" {
-  type = string
+  type    = string
   default = "kafka"
+}
+
+variable "kafka_rest_ingress_enabled" {
+  type    = bool
+  default = true
 }

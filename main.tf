@@ -1,17 +1,17 @@
 resource "kubernetes_config_map" "zookeeper" {
   metadata {
-    name   = "${var.kafka_name}-zookeeper"
+    name      = "${var.kafka_name}-zookeeper"
     namespace = "${var.namespace}"
-    labels = { app = "${var.kafka_name}-zookeeper", component = "server" }
+    labels    = { app = "${var.kafka_name}-zookeeper", component = "server" }
   }
   data = { ok = "#!/bin/sh\necho ruok | nc 127.0.0.1 $${1:-2181}\n", ready = "#!/bin/sh\necho ruok | nc 127.0.0.1 $${1:-2181}\n", run = "#!/bin/bash\n\nset -a\nROOT=$(echo /apache-zookeeper-*)\n\nZK_USER=$${ZK_USER:-\"zookeeper\"}\nZK_LOG_LEVEL=$${ZK_LOG_LEVEL:-\"INFO\"}\nZK_DATA_DIR=$${ZK_DATA_DIR:-\"/data\"}\nZK_DATA_LOG_DIR=$${ZK_DATA_LOG_DIR:-\"/data/log\"}\nZK_CONF_DIR=$${ZK_CONF_DIR:-\"/conf\"}\nZK_CLIENT_PORT=$${ZK_CLIENT_PORT:-2181}\nZK_SERVER_PORT=$${ZK_SERVER_PORT:-2888}\nZK_ELECTION_PORT=$${ZK_ELECTION_PORT:-3888}\nZK_TICK_TIME=$${ZK_TICK_TIME:-2000}\nZK_INIT_LIMIT=$${ZK_INIT_LIMIT:-10}\nZK_SYNC_LIMIT=$${ZK_SYNC_LIMIT:-5}\nZK_HEAP_SIZE=$${ZK_HEAP_SIZE:-2G}\nZK_MAX_CLIENT_CNXNS=$${ZK_MAX_CLIENT_CNXNS:-60}\nZK_MIN_SESSION_TIMEOUT=$${ZK_MIN_SESSION_TIMEOUT:- $((ZK_TICK_TIME*2))}\nZK_MAX_SESSION_TIMEOUT=$${ZK_MAX_SESSION_TIMEOUT:- $((ZK_TICK_TIME*20))}\nZK_SNAP_RETAIN_COUNT=$${ZK_SNAP_RETAIN_COUNT:-3}\nZK_PURGE_INTERVAL=$${ZK_PURGE_INTERVAL:-0}\nID_FILE=\"$ZK_DATA_DIR/myid\"\nZK_CONFIG_FILE=\"$ZK_CONF_DIR/zoo.cfg\"\nLOG4J_PROPERTIES=\"$ZK_CONF_DIR/log4j.properties\"\nHOST=$(hostname)\nDOMAIN=`hostname -d`\nZOOCFG=zoo.cfg\nZOOCFGDIR=$ZK_CONF_DIR\nJVMFLAGS=\"-Xmx$ZK_HEAP_SIZE -Xms$ZK_HEAP_SIZE\"\n\nAPPJAR=$(echo $ROOT/*jar)\nCLASSPATH=\"$${ROOT}/lib/*:$${APPJAR}:$${ZK_CONF_DIR}:\"\n\nif [[ $HOST =~ (.*)-([0-9]+)$ ]]; then\n    NAME=$${BASH_REMATCH[1]}\n    ORD=$${BASH_REMATCH[2]}\n    MY_ID=$((ORD+1))\nelse\n    echo \"Failed to extract ordinal from hostname $HOST\"\n    exit 1\nfi\n\nmkdir -p $ZK_DATA_DIR\nmkdir -p $ZK_DATA_LOG_DIR\necho $MY_ID >> $ID_FILE\n\necho \"clientPort=$ZK_CLIENT_PORT\" >> $ZK_CONFIG_FILE\necho \"dataDir=$ZK_DATA_DIR\" >> $ZK_CONFIG_FILE\necho \"dataLogDir=$ZK_DATA_LOG_DIR\" >> $ZK_CONFIG_FILE\necho \"tickTime=$ZK_TICK_TIME\" >> $ZK_CONFIG_FILE\necho \"initLimit=$ZK_INIT_LIMIT\" >> $ZK_CONFIG_FILE\necho \"syncLimit=$ZK_SYNC_LIMIT\" >> $ZK_CONFIG_FILE\necho \"maxClientCnxns=$ZK_MAX_CLIENT_CNXNS\" >> $ZK_CONFIG_FILE\necho \"minSessionTimeout=$ZK_MIN_SESSION_TIMEOUT\" >> $ZK_CONFIG_FILE\necho \"maxSessionTimeout=$ZK_MAX_SESSION_TIMEOUT\" >> $ZK_CONFIG_FILE\necho \"autopurge.snapRetainCount=$ZK_SNAP_RETAIN_COUNT\" >> $ZK_CONFIG_FILE\necho \"autopurge.purgeInterval=$ZK_PURGE_INTERVAL\" >> $ZK_CONFIG_FILE\necho \"4lw.commands.whitelist=*\" >> $ZK_CONFIG_FILE\n\nfor (( i=1; i<=$ZK_REPLICAS; i++ ))\ndo\n    echo \"server.$i=$NAME-$((i-1)).$DOMAIN:$ZK_SERVER_PORT:$ZK_ELECTION_PORT\" >> $ZK_CONFIG_FILE\ndone\n\nrm -f $LOG4J_PROPERTIES\n\necho \"zookeeper.root.logger=$ZK_LOG_LEVEL, CONSOLE\" >> $LOG4J_PROPERTIES\necho \"zookeeper.console.threshold=$ZK_LOG_LEVEL\" >> $LOG4J_PROPERTIES\necho \"zookeeper.log.threshold=$ZK_LOG_LEVEL\" >> $LOGGER_PROPERS_FILE\necho \"zookeeper.log.dir=$ZK_DATA_LOG_DIR\" >> $LOG4J_PROPERTIES\necho \"zookeeper.log.file=zookeeper.log\" >> $LOG4J_PROPERTIES\necho \"zookeeper.log.maxfilesize=256MB\" >> $LOG4J_PROPERTIES\necho \"zookeeper.log.maxbackupindex=10\" >> $LOG4J_PROPERTIES\necho \"zookeeper.tracelog.dir=$ZK_DATA_LOG_DIR\" >> $LOG4J_PROPERTIES\necho \"zookeeper.tracelog.file=zookeeper_trace.log\" >> $LOG4J_PROPERTIES\necho \"log4j.rootLogger=\\$${zookeeper.root.logger}\" >> $LOG4J_PROPERTIES\necho \"log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\" >> $LOG4J_PROPERTIES\necho \"log4j.appender.CONSOLE.Threshold=\\$${zookeeper.console.threshold}\" >> $LOG4J_PROPERTIES\necho \"log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\" >> $LOG4J_PROPERTIES\necho \"log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n\" >> $LOG4J_PROPERTIES\n\nif [ -n \"$JMXDISABLE\" ]\nthen\n    MAIN=org.apache.zookeeper.server.quorum.QuorumPeerMain\nelse\n    MAIN=\"-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMXPORT -Dcom.sun.management.jmxremote.authenticate=$JMXAUTH -Dcom.sun.management.jmxremote.ssl=$JMXSSL -Dzookeeper.jmx.log4j.disable=$JMXLOG4J org.apache.zookeeper.server.quorum.QuorumPeerMain\"\nfi\n\nset -x\nexec java -cp \"$CLASSPATH\" $JVMFLAGS $MAIN $ZK_CONFIG_FILE\n" }
 }
 
 resource "kubernetes_service" "zookeeper_headless" {
   metadata {
-    name   = "${var.kafka_name}-zookeeper-headless"
+    name      = "${var.kafka_name}-zookeeper-headless"
     namespace = "${var.namespace}"
-    labels = { app = "${var.kafka_name}-zookeeper" }
+    labels    = { app = "${var.kafka_name}-zookeeper" }
   }
   spec {
     port {
@@ -39,9 +39,9 @@ resource "kubernetes_service" "zookeeper_headless" {
 
 resource "kubernetes_service" "zookeeper" {
   metadata {
-    name   = "${var.kafka_name}-zookeeper"
+    name      = "${var.kafka_name}-zookeeper"
     namespace = "${var.namespace}"
-    labels = { app = "${var.kafka_name}-zookeeper" }
+    labels    = { app = "${var.kafka_name}-zookeeper" }
   }
   spec {
     port {
@@ -57,9 +57,9 @@ resource "kubernetes_service" "zookeeper" {
 
 resource "kubernetes_service" "kafka" {
   metadata {
-    name   = "${var.kafka_name}"
+    name      = "${var.kafka_name}"
     namespace = "${var.namespace}"
-    labels = { app = "${var.kafka_name}" }
+    labels    = { app = "${var.kafka_name}" }
   }
   spec {
     port {
@@ -74,7 +74,7 @@ resource "kubernetes_service" "kafka" {
 resource "kubernetes_service" "kafka_headless" {
   metadata {
     name        = "${var.kafka_name}-headless"
-    namespace = "${var.namespace}"
+    namespace   = "${var.namespace}"
     labels      = { app = "${var.kafka_name}" }
     annotations = { "service.alpha.kubernetes.io/tolerate-unready-endpoints" = "true" }
   }
@@ -90,9 +90,9 @@ resource "kubernetes_service" "kafka_headless" {
 
 resource "kubernetes_stateful_set" "zookeeper" {
   metadata {
-    name   = "${var.kafka_name}-zookeeper"
+    name      = "${var.kafka_name}-zookeeper"
     namespace = "${var.namespace}"
-    labels = { app = "${var.kafka_name}-zookeeper", component = "server" }
+    labels    = { app = "${var.kafka_name}-zookeeper", component = "server" }
   }
   spec {
     replicas = "${var.zookeeper_cluster_size}"
@@ -239,9 +239,9 @@ resource "kubernetes_stateful_set" "zookeeper" {
 
 resource "kubernetes_stateful_set" "kafka" {
   metadata {
-    name   = "${var.kafka_name}"
+    name      = "${var.kafka_name}"
     namespace = "${var.namespace}"
-    labels = { app = "${var.kafka_name}" }
+    labels    = { app = "${var.kafka_name}" }
   }
   spec {
     replicas = "${var.cluster_size}"
@@ -355,12 +355,12 @@ resource "kubernetes_stateful_set" "kafka" {
 }
 
 resource "kubernetes_deployment" "kafka_rest" {
-  count  = var.kafka_rest_enabled ? 1 : 0
+  count = var.kafka_rest_enabled ? 1 : 0
   metadata {
-    name = "${var.kafka_name}-rest"
+    name      = "${var.kafka_name}-rest"
     namespace = "${var.namespace}"
     labels = {
-      app = "${var.kafka_name}-rest"
+      app     = "${var.kafka_name}-rest"
       release = "${var.kafka_name}-rest"
     }
   }
@@ -370,7 +370,7 @@ resource "kubernetes_deployment" "kafka_rest" {
 
     selector {
       match_labels = {
-        app = "${var.kafka_name}-rest"
+        app     = "${var.kafka_name}-rest"
         release = "${var.kafka_name}-rest"
       }
     }
@@ -378,12 +378,12 @@ resource "kubernetes_deployment" "kafka_rest" {
     template {
       metadata {
         labels = {
-          app = "${var.kafka_name}-rest"
+          app     = "${var.kafka_name}-rest"
           release = "${var.kafka_name}-rest"
         }
 
         annotations = {
-          "prometheus.io/port" = "5556"
+          "prometheus.io/port"   = "5556"
           "prometheus.io/scrape" = "true"
         }
       }
@@ -467,17 +467,17 @@ resource "kubernetes_deployment" "kafka_rest" {
 }
 
 resource "kubernetes_ingress" "kafka_rest_ingress" {
-  count  = var.kafka_rest_enabled ? 1 : 0
+  count = var.kafka_rest_enabled && var.kafka_rest_ingress_enabled ? 1 : 0
   metadata {
-    name = "${var.kafka_name}-rest-ingress"
+    name      = "${var.kafka_name}-rest-ingress"
     namespace = "${var.namespace}"
     labels = {
-      app = "${var.kafka_name}-rest"
+      app     = "${var.kafka_name}-rest"
       release = "${var.kafka_name}-rest"
     }
 
     annotations = {
-      for instance in var.kafka_rest_ingress_annotations:
+      for instance in var.kafka_rest_ingress_annotations :
       instance.key => instance.value
     }
   }
@@ -506,12 +506,12 @@ resource "kubernetes_ingress" "kafka_rest_ingress" {
 }
 
 resource "kubernetes_service" "kafka_rest_service" {
-  count  = var.kafka_rest_enabled ? 1 : 0
+  count = var.kafka_rest_enabled ? 1 : 0
   metadata {
-    name = "${var.kafka_name}-rest-service"
+    name      = "${var.kafka_name}-rest-service"
     namespace = "${var.namespace}"
     labels = {
-      app = "${var.kafka_name}-rest"
+      app     = "${var.kafka_name}-rest"
       release = "${var.kafka_name}-rest"
     }
   }
@@ -523,7 +523,7 @@ resource "kubernetes_service" "kafka_rest_service" {
     }
 
     selector = {
-      app = "${var.kafka_name}-rest"
+      app     = "${var.kafka_name}-rest"
       release = "${var.kafka_name}-rest"
     }
   }
@@ -531,12 +531,12 @@ resource "kubernetes_service" "kafka_rest_service" {
 
 
 resource "kubernetes_config_map" "kafka_rest_jmx_configmap" {
-  count  = var.kafka_rest_enabled ? 1 : 0
+  count = var.kafka_rest_enabled ? 1 : 0
   metadata {
-    name = "${var.kafka_name}-rest-jmx-configmap"
+    name      = "${var.kafka_name}-rest-jmx-configmap"
     namespace = "${var.namespace}"
     labels = {
-      app = "${var.kafka_name}-rest"
+      app     = "${var.kafka_name}-rest"
       release = "${var.kafka_name}-rest"
     }
   }
