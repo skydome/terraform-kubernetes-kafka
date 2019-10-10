@@ -9,7 +9,7 @@ Tested on GKE but it should work for any kubernetes cluster given the right terr
 - **kafka_storage_size**               : disk size to be requested for kafka (i.e. "64Gi")
 - **kafka_storage_class_name**         : kubernetes storage class to be used for kafka persistence
 - **zookeeper_storage_size**           : disk size to be requested for zooekeeper (i.e. "64Gi")
-- **zookeeper_storage_class_name**     : kubernetes storage class to be used for kafka persistence (i.e. "64Gi")
+- **zookeeper_storage_class_name**     : kubernetes storage class to be used for kafka persistence
 - **namespace**                        : kubernetes namespace to be deployed
 - **cluster_size**                     : kafka cluster size
 - **zookeeper_cluster_size**           : zookeeper cluster size
