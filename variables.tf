@@ -31,3 +31,23 @@ variable "kafka_rest_ingress_enabled" {
   type    = bool
   default = true
 }
+
+variable "kafka_storage_size" {
+  type = string
+  default = "1Gi"
+}
+
+variable "kafka_storage_class_name" {
+  type = string
+  default = "standard"
+}
+
+variable "zookeeper_storage_size" {
+  type = string
+  default = "2Gi"
+}
+
+variable "zookeeper_storage_class_name" {
+  type = string
+  default = "standard"
+}
