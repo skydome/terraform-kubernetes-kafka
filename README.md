@@ -5,20 +5,25 @@ Tested on GKE but it should work for any kubernetes cluster given the right terr
 
 ## Inputs
 
-- **kafka_name**                       : name of the kafka deployment
-- **kafka_storage_size**               : disk size to be requested for kafka (i.e. "64Gi")
-- **kafka_storage_class_name**         : kubernetes storage class to be used for kafka persistence
-- **zookeeper_storage_size**           : disk size to be requested for zooekeeper (i.e. "64Gi")
-- **zookeeper_storage_class_name**     : kubernetes storage class to be used for zookeeper persistence
-- **namespace**                        : kubernetes namespace to be deployed
-- **cluster_size**                     : kafka cluster size
-- **zookeeper_cluster_size**           : zookeeper cluster size
-- **offset_topic_replication_factor**  : default kafka topic replication factor
-- **kafka_rest_enabled**               : should we deploy kafka rest?
-- **kafka_rest_replicacount**          : kafka rest deploment replica count
-- **kafka_rest_ingress_host**          : ingress host address for routing
-- **kafka_rest_ingress_annotations**   : extra annotations for kubernetes ingress
-- **kafka_rest_ingress_enabled**       : should we enable ingress for kafka rest? (may want to deploy proxy in front of it?)
+- **kafka_name**                               : Name of the kafka deployment
+- **kafka_storage_size**                       : Disk size to be requested for kafka (i.e. "64Gi")
+- **kafka_storage_class_name**                 : Kubernetes storage class to be used for kafka persistence
+- **allow_auto_create_topics**                 : Allow automatic topic creation on the broker when subscribing to or assigning a topic.
+- **default_replication_factor**               : Default replication factor for automatically created topics
+- **min_insync_replicas**                      : Minimum in-sync replica count for partitions
+- **transaction_state_log_replication_factor** : The replication factor for the transaction topic
+- **transaction_state_log_min_isr**            : Overridden min.insync.replicas config for the transaction topic.
+- **offset_topic_replication_factor**          : Default offset topic replication factor
+- **zookeeper_storage_size**                   : Disk size to be requested for zooekeeper (i.e. "64Gi")
+- **zookeeper_storage_class_name**             : Kubernetes storage class to be used for zookeeper persistence
+- **namespace**                                : Kubernetes namespace to be deployed
+- **cluster_size**                             : Kafka cluster size
+- **zookeeper_cluster_size**                   : Zookeeper cluster size
+- **kafka_rest_enabled**                       : Should we deploy kafka rest?
+- **kafka_rest_replicacount**                  : Kafka rest deploment replica count
+- **kafka_rest_ingress_host**                  : Ingress host address for routing
+- **kafka_rest_ingress_annotations**           : Extra annotations for kubernetes ingress
+- **kafka_rest_ingress_enabled**               : Should we enable ingress for kafka rest? (may want to deploy proxy in front of it?)
 
 ## Dependencies
 
