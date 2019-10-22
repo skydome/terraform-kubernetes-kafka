@@ -1,4 +1,4 @@
-# terraform-kubernetes-cassandra
+# terraform-kubernetes-kafka
 Kafka on Kubernetes
 
 Tested on GKE but it should work for any kubernetes cluster given the right terraform-provider-kubernetes setup.
