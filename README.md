@@ -24,6 +24,7 @@ Tested on GKE but it should work for any kubernetes cluster given the right terr
 - **kafka_rest_ingress_host**                  : Ingress host address for routing
 - **kafka_rest_ingress_annotations**           : Extra annotations for kubernetes ingress
 - **kafka_rest_ingress_enabled**               : Should we enable ingress for kafka rest? (may want to deploy proxy in front of it?)
+- **confluent_kafka_version**                  : Which version of Confluent Kafka to use (default "5.4.0")
 
 ## Dependencies
 
@@ -32,8 +33,8 @@ Terraform Kubernetes Provider
 ## Tested With
 
 - terraform-providers/kubernetes : 1.9.0
-- confluentinc/cp-kafka:5.3.0 docker image
-- confluentinc/cp-kafka-rest:5.3.0 docker image
+- confluentinc/cp-kafka:5.4.0 docker image
+- confluentinc/cp-kafka-rest:5.4.0 docker image
 - zookeeper:3.5.5 docker image
 - kubernetes 1.13.7-gke.8
 

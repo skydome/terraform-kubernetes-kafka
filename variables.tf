@@ -1,6 +1,11 @@
 variable "namespace" {}
 variable "kafka_name" {}
 
+variable "confluent_kafka_version" {
+  type    = string
+  default = "5.4.0"
+}
+
 variable "kafka_storage_size" {
   type    = string
   default = "1Gi"
