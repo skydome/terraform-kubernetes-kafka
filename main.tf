@@ -269,7 +269,7 @@ resource "kubernetes_stateful_set" "kafka" {
       spec {
         container {
           name    = "kafka-broker"
-          image   = "confluentinc/cp-kafka:5.3.0"
+          image   = "confluentinc/cp-kafka:${var.confluent_kafka_version}"
           command = ["sh", "-exc", "unset KAFKA_PORT && \\\nexport KAFKA_BROKER_ID=$${POD_NAME##*-} && \\\nexport KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://$${POD_IP}:9092 && \\\nexec /etc/confluent/docker/run\n"]
           port {
             name           = "kafka"
@@ -451,7 +451,7 @@ resource "kubernetes_deployment" "kafka_rest" {
 
         container {
           name  = "${var.kafka_name}-rest-server"
-          image = "confluentinc/cp-kafka-rest:5.3.0"
+          image = "confluentinc/cp-kafka-rest:${var.confluent_kafka_version}"
 
           port {
             name           = "rest-proxy"
